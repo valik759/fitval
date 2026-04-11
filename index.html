@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="FitVAL">
 <meta name="theme-color" content="#0c0c0c">
-<link rel="manifest" href="./manifest.json">
+<link rel="manifest" href="/fitval/manifest.json">
 <title>FitVAL</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -663,7 +663,7 @@ function setupPWA(){
   // Register EXTERNAL service-worker.js (required by PWABuilder)
   try{
     if('serviceWorker' in navigator && location.protocol==='https:' && window.self===window.top){
-      navigator.serviceWorker.register('/service-worker.js',{scope:'/'})
+      navigator.serviceWorker.register('/fitval/service-worker.js',{scope:'/fitval/'})
         .then(r=>{
           console.log('FitVAL SW registered, scope:',r.scope);
           if(r.waiting) r.waiting.postMessage({type:'SKIP_WAITING'});
