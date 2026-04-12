@@ -1,12 +1,12 @@
 // FitVAL Service Worker — network-first
-const CACHE = 'fitval-v4';
+const CACHE = 'fitval-v5'; // <-- ВАЖНО: Мы повысили версию кэша, чтобы приложение обновилось
 
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(c => c.addAll([
-      '/fitval/',
-      '/fitval/index.html',
-      '/fitval/manifest.json'
+      './',
+      './index.html',
+      './manifest.json'
     ])).then(() => self.skipWaiting())
   );
 });
@@ -24,8 +24,16 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  
+  // Исключаем сторонние API из кэширования
   if (e.request.url.includes('api.anthropic.com')) return;
   if (e.request.url.includes('fonts.googleapis.com')) return;
+  
+  // ВАЖНО: Исключаем служебные запросы Firebase, чтобы не сломать авторизацию и базу
+  if (e.request.url.includes('firestore.googleapis.com')) return; 
+  if (e.request.url.includes('identitytoolkit.googleapis.com')) return;
+  if (e.request.url.includes('firebase')) return;
+
   if (!e.request.url.startsWith('https://')) return;
 
   e.respondWith(
