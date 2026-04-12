@@ -3,8 +3,8 @@
   "name": "FitVAL",
   "short_name": "FitVAL",
   "description": "Персональный фитнес-трекер Val — тренировки, прогресс, питание, AI-тренер",
-  "start_url": "/fitval/",
-  "scope": "/fitval/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0c0c0c",
@@ -12,28 +12,22 @@
   "lang": "ru",
   "icons": [
     {
-      "src": "https://valik759.github.io/fitval/icons/fitv-icon-48x48.png",
-      "sizes": "48x48",
-      "type": "image/jpeg",
-      "purpose": "any"
-    },
-    {
-      "src": "https://valik759.github.io/fitval/icons/fitv-icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/jpeg",
-      "purpose": "any"
-    },
-    {
-      "src": "https://valik759.github.io/fitval/icons/fitv-icon-192x192.png",
+      "src": "icons/fitv-icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "https://valik759.github.io/fitval/icons/fitv-icon-512x512.png",
+      "src": "icons/fitv-icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/fitv-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["health", "fitness", "sports"]
