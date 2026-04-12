@@ -7,8 +7,9 @@
 <meta name="apple-mobile-web-app-title" content="FitVAL">
 <meta name="theme-color" content="#0c0c0c">
 <link rel="manifest" href="./manifest.json">
-<title>FitVAL — Твой фитнес-облако</title>
+<title>FitVAL</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0c0c0c;--s1:#161616;--s2:#1e1e1e;--s3:#262626;--brd:rgba(255,255,255,.07);--brd2:rgba(255,255,255,.13);--acc:#baf024;--txt:#edeae2;--t2:#8a8880;--t3:#4a4840}
@@ -21,10 +22,10 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;over
 .auth-btn {width:100%;padding:16px;background:var(--acc);color:#000;border:none;border-radius:14px;font-weight:700;cursor:pointer;margin-top:10px;font-size:16px;}
 .auth-secondary {background:transparent;color:var(--t2);border:1px solid var(--brd);margin-top:8px;}
 
-/* UI */
+/* ОСНОВНОЙ UI */
 .header{padding:24px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--bg);z-index:100}
 .header h1{font-family:'Bebas Neue',cursive;font-size:36px;letter-spacing:1px;color:var(--acc)}
-.tab-nav{position:fixed;bottom:20px;left:20px;right:20px;background:rgba(22,22,22,.85);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);border:1px solid var(--brd2);border-radius:24px;display:flex;padding:8px;z-index:1000}
+.tab-nav{position:fixed;bottom:20px;left:20px;right:20px;background:rgba(22,22,22,.85);backdrop-filter:blur(15px);border:1px solid var(--brd2);border-radius:24px;display:flex;padding:8px;z-index:1000}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px;border-radius:18px;color:var(--t3);text-decoration:none;transition:0.2s}
 .tab.on{color:var(--acc);background:rgba(186,240,36,.1)}
 .tab span{font-size:10px;font-weight:600;text-transform:uppercase;margin-top:4px}
@@ -36,13 +37,21 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;over
 .card-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
 .card-t{font-family:'Bebas Neue';font-size:24px;color:var(--acc)}
 .btn-s{background:var(--s3);color:var(--txt);border:none;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:bold}
+.btn-del{background:rgba(255,68,68,0.1);color:#ff4444;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:12px;}
 
 /* МОДАЛКИ */
 .p{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);z-index:2000;display:none;align-items:flex-end}
 .p.open{display:flex}
 .p-c{background:var(--s1);width:100%;max-height:90vh;border-radius:32px 32px 0 0;padding:24px;overflow-y:auto;border-top:1px solid var(--brd2)}
+.input-field {width:100%;padding:14px;margin-bottom:12px;background:var(--s2);border:1px solid var(--brd);border-radius:12px;color:var(--txt);font-size:16px;}
 
 .toast{position:fixed;top:40px;left:50%;transform:translateX(-50%);background:var(--acc);color:#000;padding:12px 24px;border-radius:50px;font-weight:700;z-index:10000;opacity:0;transition:0.3s;pointer-events:none}
+
+/* ПИТАНИЕ МАКРОСЫ */
+.macros {display:flex;justify-content:space-between;margin-bottom:10px;background:var(--s2);padding:15px;border-radius:14px;}
+.macro-item {text-align:center;}
+.macro-val {font-weight:bold;font-size:18px;color:var(--acc);}
+.macro-lbl {font-size:12px;color:var(--t2);}
 </style>
 </head>
 <body>
@@ -68,58 +77,86 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;over
 
 <div id="tc-main" class="tc on">
     <div class="card">
-        <div class="card-h"><div class="card-t">Программа тренировок</div><button class="btn-s" onclick="openP('p-w')">+</button></div>
-        <div id="w-list">Здесь появятся ваши планы...</div>
+        <div class="card-h"><div class="card-t">Тренировки</div><button class="btn-s" onclick="openP('p-w')">+ План</button></div>
+        <div id="w-list"></div>
     </div>
 </div>
 
 <div id="tc-body" class="tc">
-    <div class="card"><div class="card-t">Прогресс веса</div><canvas id="weight-chart" height="200"></canvas></div>
     <div class="card">
-        <div class="card-h"><div class="card-t">Замеры</div><button class="btn-s" onclick="openP('p-e')">+</button></div>
-        <div id="h-list">История замеров...</div>
+        <div class="card-t" style="margin-bottom:15px;">Прогресс веса</div>
+        <canvas id="weight-chart" height="200"></canvas>
+    </div>
+    <div class="card">
+        <div class="card-h"><div class="card-t">История замеров</div><button class="btn-s" onclick="openP('p-e')">+ Вес</button></div>
+        <div id="h-list"></div>
     </div>
 </div>
 
 <div id="tc-eat" class="tc">
     <div class="card">
-        <div class="card-h"><div class="card-t">Дневник питания</div><button class="btn-s" onclick="openP('p-m')">+</button></div>
-        <div id="m-summary">КБЖУ за сегодня...</div>
+        <div class="card-h"><div class="card-t">Дневник питания</div><button class="btn-s" onclick="openP('p-m')">+ Еда</button></div>
+        <div id="m-summary" class="macros">
+            <div class="macro-item"><div class="macro-val" id="m-cal">0</div><div class="macro-lbl">Ккал</div></div>
+            <div class="macro-item"><div class="macro-val" id="m-p">0</div><div class="macro-lbl">Белки</div></div>
+            <div class="macro-item"><div class="macro-val" id="m-f">0</div><div class="macro-lbl">Жиры</div></div>
+            <div class="macro-item"><div class="macro-val" id="m-c">0</div><div class="macro-lbl">Углев</div></div>
+        </div>
         <div id="m-list" style="margin-top:15px"></div>
     </div>
 </div>
 
 <div id="p-w" class="p" onclick="closePBg(event,'p-w')">
     <div class="p-c">
-        <h2 class="card-t">Новая тренировка</h2>
-        <input type="text" id="w-nm" placeholder="Название (например, Ноги)">
-        <button class="auth-btn" onclick="saveW()">Добавить</button>
+        <h2 class="card-t" style="margin-bottom:15px;">Новая тренировка</h2>
+        <input type="text" id="w-nm" class="input-field" placeholder="Название (например, Грудь и Бицепс)">
+        <button class="auth-btn" onclick="saveW()">Сохранить</button>
     </div>
 </div>
 
 <div id="p-e" class="p" onclick="closePBg(event,'p-e')">
     <div class="p-c">
-        <h2 class="card-t">Ваш вес</h2>
-        <input type="number" id="e-v" step="0.1" placeholder="Вес в кг">
+        <h2 class="card-t" style="margin-bottom:15px;">Добавить замер веса</h2>
+        <input type="number" id="e-v" class="input-field" step="0.1" placeholder="Вес в кг (например, 75.5)">
         <button class="auth-btn" onclick="addE()">Сохранить</button>
     </div>
 </div>
 
-<div class="tab-nav">
-    <a href="#" class="tab on" onclick="sw('main',this)"><span>План</span></a>
-    <a href="#" class="tab" onclick="sw('body',this)"><span>Тело</span></a>
-    <a href="#" class="tab" onclick="sw('eat',this)"><span>Еда</span></a>
+<div id="p-m" class="p" onclick="closePBg(event,'p-m')">
+    <div class="p-c">
+        <h2 class="card-t" style="margin-bottom:15px;">Добавить прием пищи</h2>
+        <input type="text" id="m-nm" class="input-field" placeholder="Что съели?">
+        <input type="number" id="m-kcal" class="input-field" placeholder="Калории">
+        <div style="display:flex; gap:10px;">
+            <input type="number" id="m-prot" class="input-field" placeholder="Белки">
+            <input type="number" id="m-fat" class="input-field" placeholder="Жиры">
+            <input type="number" id="m-carb" class="input-field" placeholder="Углеводы">
+        </div>
+        <button class="auth-btn" onclick="addM()">Добавить</button>
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<div class="tab-nav">
+    <a href="#" class="tab on" onclick="sw('main',this)"><span>💪 План</span></a>
+    <a href="#" class="tab" onclick="sw('body',this)"><span>📈 Тело</span></a>
+    <a href="#" class="tab" onclick="sw('eat',this)"><span>🍎 Еда</span></a>
+</div>
 
 <script type="module">
-  // FIREBASE SDK
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-  // ТВОЙ КОНФИГ ИЗ FIREBASE
+  // ==========================================
+  // const firebaseConfig = {
+    apiKey: "AIzaSyDNuuCfcF6_dGYlSrtwhe3MH8rhRjbxXio",
+    authDomain: "fitval-cloud.firebaseapp.com",
+    projectId: "fitval-cloud",
+    storageBucket: "fitval-cloud.firebasestorage.app",
+    messagingSenderId: "377931453405",
+    appId: "1:377931453405:web:82cc543b9bde3618755c34"
+  };
+  // ==========================================
   const firebaseConfig = {
     apiKey: "AIzaSyDNuuCfcF6_dGYlSrtwhe3MH8rhRjbxXio",
     authDomain: "fitval-cloud.firebaseapp.com",
@@ -133,129 +170,209 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;over
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  let currentUser = null;
+  window.currentUser = null;
 
-  // ФУНКЦИЯ: СОХРАНЕНИЕ В FIREBASE
+  // ФУНКЦИЯ ОТПРАВКИ В ОБЛАКО
   window.saveToCloud = async () => {
-    if (!currentUser) return;
+    if (!window.currentUser) return;
     try {
       const data = {
-        workouts: JSON.parse(localStorage.getItem('f_workouts') || '[]'),
-        history: JSON.parse(localStorage.getItem('f_history') || '[]'),
-        meals: JSON.parse(localStorage.getItem('f_meals') || '{}'),
+        workouts: window.workouts,
+        history: window.history,
+        meals: window.meals,
         lastUpdate: new Date().toISOString()
       };
-      await setDoc(doc(db, "users", currentUser.uid), data);
-      console.log("Cloud updated");
+      await setDoc(doc(db, "users", window.currentUser.uid), data);
     } catch (e) { console.error("Sync error:", e); }
   };
 
-  // ФУНКЦИЯ: ЗАГРУЗКА ИЗ FIREBASE
+  // ФУНКЦИЯ ЗАГРУЗКИ ИЗ ОБЛАКА
   async function loadFromCloud(uid) {
     const snap = await getDoc(doc(db, "users", uid));
     if (snap.exists()) {
       const d = snap.data();
-      localStorage.setItem('f_workouts', JSON.stringify(d.workouts || []));
-      localStorage.setItem('f_history', JSON.stringify(d.history || []));
-      localStorage.setItem('f_meals', JSON.stringify(d.meals || {}));
-      
-      // Обновляем списки
-      workouts = d.workouts || [];
-      history = d.history || [];
-      meals = d.meals || {};
-      drawW(); drawH(); drawM();
+      window.workouts = d.workouts || [];
+      window.history = d.history || [];
+      window.meals = d.meals || [];
+      window.saveLocal();
+      window.updateAllUI();
     }
   }
 
-  // ПРОВЕРКА ВХОДА
+  // ПРОВЕРКА АВТОРИЗАЦИИ
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      currentUser = user;
+      window.currentUser = user;
       document.getElementById('auth-overlay').style.display = 'none';
       await loadFromCloud(user.uid);
-      showT('Данные синхронизированы');
+      window.showT('Успешный вход!');
     } else {
-      currentUser = null;
+      window.currentUser = null;
       document.getElementById('auth-overlay').style.display = 'flex';
+      // Очищаем локальные данные при выходе
+      window.workouts = []; window.history = []; window.meals = [];
+      window.updateAllUI();
     }
   });
 
-  // КНОПКИ ВХОДА
+  // КНОПКИ ВХОДА И ВЫХОДА
+  const authErr = document.getElementById('auth-error');
   document.getElementById('btn-login').onclick = () => {
-    const e = document.getElementById('auth-email').value;
-    const p = document.getElementById('auth-password').value;
-    signInWithEmailAndPassword(auth, e, p).catch(() => authError.textContent = "Ошибка входа");
+    signInWithEmailAndPassword(auth, document.getElementById('auth-email').value, document.getElementById('auth-password').value)
+      .catch(() => authErr.textContent = "Неверный логин или пароль");
   };
-
   document.getElementById('btn-register').onclick = () => {
-    const e = document.getElementById('auth-email').value;
-    const p = document.getElementById('auth-password').value;
-    createUserWithEmailAndPassword(auth, e, p).catch(() => authError.textContent = "Минимум 6 символов");
+    createUserWithEmailAndPassword(auth, document.getElementById('auth-email').value, document.getElementById('auth-password').value)
+      .catch(() => authErr.textContent = "Ошибка: Пароль минимум 6 символов");
   };
-
   document.getElementById('btn-logout').onclick = () => signOut(auth);
 </script>
 
 <script>
-/* ЛОГИКА ПРИЛОЖЕНИЯ */
-let workouts = JSON.parse(localStorage.getItem('f_workouts') || '[]');
-let history = JSON.parse(localStorage.getItem('f_history') || '[]');
-let meals = JSON.parse(localStorage.getItem('f_meals') || '{}');
+// ДАННЫЕ
+window.workouts = JSON.parse(localStorage.getItem('f_workouts') || '[]');
+window.history = JSON.parse(localStorage.getItem('f_history') || '[]');
+window.meals = JSON.parse(localStorage.getItem('f_meals') || '[]');
 
-function sync() {
-    localStorage.setItem('f_workouts', JSON.stringify(workouts));
-    localStorage.setItem('f_history', JSON.stringify(history));
-    localStorage.setItem('f_meals', JSON.stringify(meals));
-    if (window.saveToCloud) window.saveToCloud(); // Отправка в облако
+let weightChart = null;
+
+// СОХРАНЕНИЕ
+window.saveLocal = function() {
+    localStorage.setItem('f_workouts', JSON.stringify(window.workouts));
+    localStorage.setItem('f_history', JSON.stringify(window.history));
+    localStorage.setItem('f_meals', JSON.stringify(window.meals));
+    if (window.saveToCloud) window.saveToCloud(); // Триггерим Firebase
 }
 
-function saveW() {
+window.updateAllUI = function() { drawW(); drawH(); drawM(); }
+
+// --- ТРЕНИРОВКИ ---
+window.saveW = function() {
     const nm = document.getElementById('w-nm').value;
     if(!nm) return;
-    workouts.push({id:Date.now(), nm});
-    sync(); drawW(); closeP('p-w');
+    window.workouts.push({ id: Date.now(), nm: nm });
+    document.getElementById('w-nm').value = '';
+    window.saveLocal(); drawW(); closeP('p-w'); window.showT('Добавлено');
 }
-
-function addE() {
-    const v = parseFloat(document.getElementById('e-v').value);
-    if(!v) return;
-    history.push({dt:new Date().toISOString().split('T')[0], v});
-    sync(); drawH(); closeP('p-e');
+window.delW = function(id) {
+    if(confirm('Удалить тренировку?')) {
+        window.workouts = window.workouts.filter(w => w.id !== id);
+        window.saveLocal(); drawW();
+    }
 }
-
-/* UI UTILS */
-function openP(id){document.getElementById(id).classList.add('open');}
-function closeP(id){document.getElementById(id).classList.remove('open');}
-function closePBg(e,id){if(e.target===document.getElementById(id))closeP(id);}
-
-function sw(n,btn){
-    document.querySelectorAll('.tc').forEach(t=>t.classList.remove('on'));
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-    document.getElementById('tc-'+n).classList.add('on');btn.classList.add('on');
-}
-
 function drawW() {
     const l = document.getElementById('w-list');
-    l.innerHTML = workouts.map(w => `<div class="card" style="margin-bottom:8px">${w.nm}</div>`).join('') || 'Нет планов';
+    if(window.workouts.length === 0) { l.innerHTML = '<div style="color:var(--t2)">У вас пока нет планов. Нажмите + План</div>'; return; }
+    l.innerHTML = window.workouts.map(w => `
+        <div class="card" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; background:var(--s2);">
+            <div style="font-weight:bold">${w.nm}</div>
+            <button class="btn-del" onclick="delW(${w.id})">Удалить</button>
+        </div>
+    `).join('');
 }
 
+// --- ТЕЛО (ВЕС) ---
+window.addE = function() {
+    const v = parseFloat(document.getElementById('e-v').value);
+    if(!v) return;
+    const today = new Date().toLocaleDateString('ru-RU');
+    window.history.push({ id: Date.now(), dt: today, v: v });
+    document.getElementById('e-v').value = '';
+    window.saveLocal(); drawH(); closeP('p-e'); window.showT('Вес записан');
+}
+window.delE = function(id) {
+    window.history = window.history.filter(h => h.id !== id);
+    window.saveLocal(); drawH();
+}
 function drawH() {
     const l = document.getElementById('h-list');
-    l.innerHTML = history.slice(-5).map(h => `<div>${h.dt}: ${h.v} кг</div>`).join('') || 'Нет истории';
+    l.innerHTML = window.history.slice().reverse().map(h => `
+        <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid var(--brd)">
+            <span style="color:var(--t2)">${h.dt}</span>
+            <span style="font-weight:bold">${h.v} кг</span>
+            <button class="btn-del" onclick="delE(${h.id})">✕</button>
+        </div>
+    `).join('') || '<div style="color:var(--t2)">Нет записей</div>';
+    drawChart();
+}
+function drawChart() {
+    const ctx = document.getElementById('weight-chart');
+    if(!ctx) return;
+    if(weightChart) weightChart.destroy();
+    
+    // Берем последние 10 записей для графика
+    const dataSlice = window.history.slice(-10);
+    const labels = dataSlice.map(h => h.dt.slice(0,5)); // Только день и месяц
+    const data = dataSlice.map(h => h.v);
+
+    weightChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: labels, datasets: [{ label: 'Вес (кг)', data: data, borderColor: '#baf024', backgroundColor: 'rgba(186,240,36,0.1)', fill: true, tension: 0.3 }] },
+        options: { plugins: { legend: {display: false} }, scales: { y: { ticks: {color: '#8a8880'}, grid:{color:'rgba(255,255,255,0.05)'} }, x: { ticks: {color: '#8a8880'}, grid:{display:false} } } }
+    });
 }
 
+// --- ПИТАНИЕ ---
+window.addM = function() {
+    const nm = document.getElementById('m-nm').value;
+    const kcal = Number(document.getElementById('m-kcal').value) || 0;
+    const p = Number(document.getElementById('m-prot').value) || 0;
+    const f = Number(document.getElementById('m-fat').value) || 0;
+    const c = Number(document.getElementById('m-carb').value) || 0;
+    if(!nm) return;
+
+    window.meals.push({ id: Date.now(), nm, kcal, p, f, c });
+    document.querySelectorAll('#p-m input').forEach(i => i.value = ''); // Очистка
+    window.saveLocal(); drawM(); closeP('p-m'); window.showT('Добавлено');
+}
+window.delM = function(id) {
+    window.meals = window.meals.filter(m => m.id !== id);
+    window.saveLocal(); drawM();
+}
 function drawM() {
-    document.getElementById('m-summary').textContent = "Данные обновлены в облаке";
+    // Считаем сумму
+    let tkcal = 0, tp = 0, tf = 0, tc = 0;
+    window.meals.forEach(m => { tkcal += m.kcal; tp += m.p; tf += m.f; tc += m.c; });
+    
+    document.getElementById('m-cal').textContent = tkcal;
+    document.getElementById('m-p').textContent = tp;
+    document.getElementById('m-f').textContent = tf;
+    document.getElementById('m-c').textContent = tc;
+
+    const l = document.getElementById('m-list');
+    l.innerHTML = window.meals.slice().reverse().map(m => `
+        <div class="card" style="margin-bottom:10px; background:var(--s2); padding:15px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="font-weight:bold">${m.nm}</span>
+                <button class="btn-del" onclick="delM(${m.id})">Удалить</button>
+            </div>
+            <div style="color:var(--t2); font-size:13px;">${m.kcal} ккал | Б: ${m.p} Ж: ${m.f} У: ${m.c}</div>
+        </div>
+    `).join('') || '<div style="color:var(--t2)">Дневник пуст</div>';
 }
 
-function showT(m) {
+// --- УТИЛИТЫ UI ---
+window.openP = function(id) { document.getElementById(id).classList.add('open'); }
+window.closeP = function(id) { document.getElementById(id).classList.remove('open'); }
+window.closePBg = function(e, id) { if(e.target === document.getElementById(id)) window.closeP(id); }
+
+window.sw = function(n, btn) {
+    document.querySelectorAll('.tc').forEach(t => t.classList.remove('on'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    document.getElementById('tc-'+n).classList.add('on'); btn.classList.add('on');
+    if(n === 'body') setTimeout(drawChart, 100);
+}
+
+let toastTimer;
+window.showT = function(m) {
     const t = document.getElementById('toast');
     t.textContent = m; t.style.opacity = 1;
-    setTimeout(() => t.style.opacity = 0, 2000);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.style.opacity = 0, 2000);
 }
 
-// Инициализация
-drawW(); drawH();
+// Инициализация интерфейса при загрузке (если юзер уже был залогинен локально)
+window.updateAllUI();
 </script>
 
 </body>
