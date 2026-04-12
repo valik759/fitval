@@ -147,16 +147,7 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;over
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-  // ==========================================
-  // const firebaseConfig = {
-    apiKey: "AIzaSyDNuuCfcF6_dGYlSrtwhe3MH8rhRjbxXio",
-    authDomain: "fitval-cloud.firebaseapp.com",
-    projectId: "fitval-cloud",
-    storageBucket: "fitval-cloud.firebasestorage.app",
-    messagingSenderId: "377931453405",
-    appId: "1:377931453405:web:82cc543b9bde3618755c34"
-  };
-  // ==========================================
+  // Твой единственный и неповторимый конфиг Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyDNuuCfcF6_dGYlSrtwhe3MH8rhRjbxXio",
     authDomain: "fitval-cloud.firebaseapp.com",
@@ -209,7 +200,6 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;over
     } else {
       window.currentUser = null;
       document.getElementById('auth-overlay').style.display = 'flex';
-      // Очищаем локальные данные при выходе
       window.workouts = []; window.history = []; window.meals = [];
       window.updateAllUI();
     }
@@ -217,17 +207,24 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;over
 
   // КНОПКИ ВХОДА И ВЫХОДА
   const authErr = document.getElementById('auth-error');
+  
   document.getElementById('btn-login').onclick = () => {
-    signInWithEmailAndPassword(auth, document.getElementById('auth-email').value, document.getElementById('auth-password').value)
+    const email = document.getElementById('auth-email').value;
+    const pass = document.getElementById('auth-password').value;
+    signInWithEmailAndPassword(auth, email, pass)
       .catch(() => authErr.textContent = "Неверный логин или пароль");
   };
+  
   document.getElementById('btn-register').onclick = () => {
-    createUserWithEmailAndPassword(auth, document.getElementById('auth-email').value, document.getElementById('auth-password').value)
+    const email = document.getElementById('auth-email').value;
+    const pass = document.getElementById('auth-password').value;
+    createUserWithEmailAndPassword(auth, email, pass)
       .catch(() => authErr.textContent = "Ошибка: Пароль минимум 6 символов");
   };
+  
   document.getElementById('btn-logout').onclick = () => signOut(auth);
 </script>
-
+    
 <script>
 // ДАННЫЕ
 window.workouts = JSON.parse(localStorage.getItem('f_workouts') || '[]');
