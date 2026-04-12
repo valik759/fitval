@@ -207,6 +207,17 @@ label{font-size:12px;color:var(--t2);display:block;margin-bottom:4px}
 </style>
 </head>
 <body>
+  <div id="auth-overlay" style="position:fixed;inset:0;background:var(--bg);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;">
+    <div style="width:100%;max-width:360px;background:var(--s1);padding:32px;border-radius:24px;border:1px solid var(--brd);text-align:center;">
+        <h1 style="font-family:'Bebas Neue'; font-size:48px; color:var(--acc); margin-bottom:8px;">FitVAL</h1>
+        <p style="color:var(--t2); margin-bottom:24px; font-size:14px;">Твой прогресс в надежном облаке</p>
+        <input type="email" id="auth-email" placeholder="Email" style="width:100%;padding:14px;margin-bottom:12px;background:var(--s2);border:1px solid var(--brd);border-radius:12px;color:var(--txt);font-size:16px;">
+        <input type="password" id="auth-password" placeholder="Пароль" style="width:100%;padding:14px;margin-bottom:12px;background:var(--s2);border:1px solid var(--brd);border-radius:12px;color:var(--txt);font-size:16px;">
+        <button id="btn-login" style="width:100%;padding:14px;background:var(--acc);color:#0c0c0c;border:none;border-radius:12px;font-weight:700;cursor:pointer;margin-top:10px;font-size:16px;">ВОЙТИ</button>
+        <button id="btn-register" style="width:100%;padding:14px;background:transparent;color:var(--t2);border:1px solid var(--brd);border-radius:12px;cursor:pointer;margin-top:8px;">РЕГИСТРАЦИЯ</button>
+        <p id="auth-error" style="color:#ff4444; font-size:13px; margin-top:16px;"></p>
+    </div>
+</div>
 <div class="prp" id="prp"><div class="pr-em">🏆</div><div class="pr-tl">Личный рекорд!</div><div class="pr-sb" id="pr-sb"></div><div class="pr-vl" id="pr-vl"></div></div>
 <div class="rt" id="rt"><div class="rt-p" id="rt-p"><div class="rt-i">⏱</div><div class="rt-m"><div class="rt-l">Отдых</div><div class="rt-t" id="rt-t">90</div><div class="rt-bw"><div class="rt-b" id="rt-b" style="width:100%"></div></div></div><button class="rt-sk" onclick="skipRest()">Пропустить</button></div></div>
 <div class="ov" id="dbo" onclick="closePBg(event,'dbo')"><div class="pnl"><div class="ph"><div class="ptr"><div class="ptl">База упражнений</div><div class="pcl" onclick="closeP('dbo')">×</div></div><div class="psr"><span class="psi">⌕</span><input type="text" id="dbq" placeholder="Поиск..." oninput="renderDBL()"></div><div class="cps" id="dbchips"></div></div><div class="pb" id="dbb"></div><div class="pf2"><div class="pf2-i" id="dbfi">Выбери упражнение</div><button class="sec" onclick="closeP('dbo')">Отмена</button></div></div></div>
@@ -1376,6 +1387,111 @@ window.addEventListener('resize',()=>{
   document.querySelectorAll('.pec-b.open').forEach(b=>{drawMC(b.id.replace('pb-',''));});
 });
 init();
+</script>
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDNuuCfcF6_dGYlSrtwhe3MH8rhRjbxXio",
+    authDomain: "fitval-cloud.firebaseapp.com",
+    projectId: "fitval-cloud",
+    storageBucket: "fitval-cloud.firebasestorage.app",
+    messagingSenderId: "377931453405",
+    appId: "1:377931453405:web:82cc543b9bde3618755c34"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+  const overlay = document.getElementById('auth-overlay');
+  const authErr = document.getElementById('auth-error');
+
+  // УМНАЯ СИНХРОНИЗАЦИЯ: Перехватываем стандартное сохранение
+  let syncTimeout = null;
+  const originalSetItem = localStorage.setItem;
+  
+  localStorage.setItem = function(key, value) {
+      originalSetItem.apply(this, arguments); // Сохраняем локально, как обычно
+      
+      // Если мы вошли в систему, отправляем копию в Firebase
+      if (currentUser) {
+          clearTimeout(syncTimeout);
+          syncTimeout = setTimeout(async () => {
+             let allData = {};
+             for(let i=0; i<localStorage.length; i++) {
+                 let k = localStorage.key(i);
+                 allData[k] = localStorage.getItem(k);
+             }
+             try {
+                await setDoc(doc(db, "users", currentUser.uid), { data: allData, lastUpdate: new Date().toISOString() });
+                console.log("Данные отправлены в облако!");
+             } catch(e) { console.error("Ошибка облака", e); }
+          }, 1500); // Отправка через 1.5 сек после изменения
+      }
+  };
+
+  // ПРОВЕРКА ВХОДА
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUser = user;
+      overlay.style.display = 'none'; // Прячем окно входа
+      
+      // Добавляем плавающую кнопку выхода в шапку
+      if (!document.getElementById('float-logout')) {
+          let btn = document.createElement('button');
+          btn.id = 'float-logout';
+          btn.innerHTML = 'Выйти';
+          btn.style.cssText = 'position:fixed; top:12px; right:50px; z-index:999; background:var(--s2); color:var(--txt); border:1px solid var(--brd); border-radius:8px; padding:6px 12px; font-size:11px; cursor:pointer; font-family:"DM Sans", sans-serif;';
+          btn.onclick = () => {
+              if(confirm("Выйти из аккаунта?")) {
+                  localStorage.clear(); // Очищаем телефон, чтобы брат не видел твои данные
+                  signOut(auth).then(() => location.reload());
+              }
+          };
+          document.body.appendChild(btn);
+      }
+
+      // Скачиваем данные из облака
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (snap.exists() && snap.data().data) {
+          let cloudData = snap.data().data;
+          let changed = false;
+          for(let k in cloudData) {
+              if(localStorage.getItem(k) !== cloudData[k]) {
+                  originalSetItem.call(localStorage, k, cloudData[k]);
+                  changed = true;
+              }
+          }
+          // Перезагружаем страницу 1 раз, чтобы графики подцепили скачанные данные
+          if (changed && !sessionStorage.getItem('justSynced')) {
+              sessionStorage.setItem('justSynced', 'true');
+              location.reload();
+          }
+      }
+    } else {
+      // Если не вошли
+      currentUser = null;
+      overlay.style.display = 'flex';
+      let btn = document.getElementById('float-logout');
+      if(btn) btn.remove();
+      sessionStorage.removeItem('justSynced');
+    }
+  });
+
+  // КНОПКИ
+  document.getElementById('btn-login').onclick = () => {
+    signInWithEmailAndPassword(auth, document.getElementById('auth-email').value, document.getElementById('auth-password').value)
+      .catch(() => authErr.textContent = "Неверный логин или пароль");
+  };
+  
+  document.getElementById('btn-register').onclick = () => {
+    createUserWithEmailAndPassword(auth, document.getElementById('auth-email').value, document.getElementById('auth-password').value)
+      .catch(() => authErr.textContent = "Ошибка регистрации (мин. 6 символов)");
+  };
 </script>
 </body>
 </html>
